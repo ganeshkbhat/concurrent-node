@@ -1,6 +1,10 @@
 
-const { Worker } = require('worker_threads');
 const path = require('path'); // Node.js built-in module for path manipulation
+const { Worker } = require('worker_threads'); 
+const { fork } = require('child_process');
+
+// Global counter for unique task IDs for process global tracker
+let taskIdCounter = 0;
 
 /**
  * Executes a task flow with a shared, persistent results map.
@@ -10,7 +14,7 @@ const path = require('path'); // Node.js built-in module for path manipulation
 async function runPromiseTaskFlow(taskFlow, tasks) {
     // Central store for all results
     const resultsMap = new Map();
-    
+
     // Iterate through the main flow array (each item is a step)
     for (const step of taskFlow) {
         if (Array.isArray(step)) {
@@ -23,17 +27,17 @@ async function runPromiseTaskFlow(taskFlow, tasks) {
                 if (!taskFunction) throw new Error(`Unknown parallel task: ${taskName}`);
                 // Each function call is a promise (or returns immediately if sync)
                 // They all receive the SAME resultsMap
-                return taskFunction(resultsMap); 
+                return taskFunction(resultsMap);
             });
 
             // 2. Wait for all parallel promises to resolve
             const parallelResults = await Promise.all(promises);
-            
+
             // 3. Update the resultsMap with the collected parallel results
             step.forEach((taskName, index) => {
                 resultsMap.set(taskName, parallelResults[index]);
             });
-            
+
             console.log(`Parallel tasks finished. Added ${step.length} results.`);
 
         } else if (typeof step === 'string') {
@@ -46,7 +50,7 @@ async function runPromiseTaskFlow(taskFlow, tasks) {
 
             // 1. Execute the function (passes the current resultsMap)
             const sequentialResult = await taskFunction(resultsMap);
-            
+
             // 2. Update the resultsMap with the result of this single task
             resultsMap.set(taskName, sequentialResult);
             console.log(`Sequential task ${taskName} finished. Result added.`);
@@ -61,46 +65,48 @@ async function runPromiseTaskFlow(taskFlow, tasks) {
 
 module.exports.runPromiseTaskFlow = runPromiseTaskFlow;
 
+// // 
+// function runInThreadWorker(taskName, taskFilePath, resultsMap) {
+//     return new Promise((resolve, reject) => {
+//         const worker = new Worker('./worker.js');
 
-function runInThreadWorker(taskName, taskFilePath, resultsMap) {
-    return new Promise((resolve, reject) => {
-        const worker = new Worker('./worker.js');
-        
-        // Convert Map data for transmission
-        const resultsArray = Array.from(resultsMap.entries());
+//         // Convert Map data for transmission
+//         const resultsArray = Array.from(resultsMap.entries());
 
-        // Send file path and data to the worker
-        worker.postMessage({ 
-            taskName, 
-            taskFilePath, 
-            resultsMap: resultsArray 
-        });
+//         // Send file path and data to the worker
+//         worker.postMessage({
+//             taskName,
+//             taskFilePath,
+//             resultsMap: resultsArray
+//         });
 
-        // Handler for success
-        worker.on('message', (message) => {
-            resolve(message); 
-            // Crucial: Terminate the worker once the result is received
-            worker.terminate(); 
-        });
+//         // Handler for success
+//         worker.on('message', (message) => {
+//             resolve(message);
+//             // Crucial: Terminate the worker once the result is received
+//             worker.terminate();
+//         });
 
-        // Handler for errors
-        worker.on('error', (err) => {
-            reject(err);
-            // Crucial: Terminate the worker on error
-            worker.terminate();
-        });
-        
-        // Alternative approach for termination (useful if message/error listeners fail)
-        // worker.on('exit', (code) => {
-        //     if (code !== 0) {
-        //         // This handles cases where the worker is terminated externally or crashes
-        //     }
-        //     // Note: If you resolve/reject and call terminate above, this is redundant.
-        //     // But keeping it can provide robustness.
-        // });
-    });
+//         // Handler for errors
+//         worker.on('error', (err) => {
+//             reject(err);
+//             // Crucial: Terminate the worker on error
+//             worker.terminate();
+//         });
 
-}
+//         // Alternative approach for termination (useful if message/error listeners fail)
+//         // worker.on('exit', (code) => {
+//         //     if (code !== 0) {
+//         //         // This handles cases where the worker is terminated externally or crashes
+//         //     }
+//         //     // Note: If you resolve/reject and call terminate above, this is redundant.
+//         //     // But keeping it can provide robustness.
+//         // });
+//     });
+
+// }
+// //
+
 
 // Worker thread setup (with termination fix)
 function runInThreadWorker(taskName, taskFilePath, resultsMap) {
@@ -112,8 +118,8 @@ function runInThreadWorker(taskName, taskFilePath, resultsMap) {
 
         // Crucial: Termination ensures the main process exits
         worker.on('message', (message) => {
-            worker.terminate(); 
-            resolve(message); 
+            worker.terminate();
+            resolve(message);
         });
         worker.on('error', (err) => {
             worker.terminate();
@@ -125,31 +131,31 @@ function runInThreadWorker(taskName, taskFilePath, resultsMap) {
 
 module.exports.runInThreadWorker = runInThreadWorker;
 
-// Helper function to resolve the function reference
-function resolveTaskFunction(taskName) {
-    const taskReference = taskResolverMap[taskName];
+// // Helper function to resolve the function reference
+// function resolveTaskFunction(taskName) {
+//     const taskReference = taskResolverMap[taskName];
 
-    if (!taskReference) {
-        throw new Error(`Unknown task or path reference: ${taskName}`);
-    }
+//     if (!taskReference) {
+//         throw new Error(`Unknown task or path reference: ${taskName}`);
+//     }
 
-    if (typeof taskReference === 'function') {
-        // Case 1: Already a function reference (in-memory sequential task)
-        return taskReference;
-    } else if (typeof taskReference === 'string') {
-        // Case 2: It's a file path string. Use require() to load the exported function.
-        try {
-            console.log(`[Resolver] Loading function from file: ${taskReference}`);
-            // Note: require() caches the result, so subsequent calls are fast.
-            return require(taskReference);
-        } catch (error) {
-            console.error(`Failed to load task from path ${taskReference}: ${error.message}`);
-            throw error;
-        }
-    } else {
-        throw new Error(`Invalid reference type for task ${taskName}.`);
-    }
-}
+//     if (typeof taskReference === 'function') {
+//         // Case 1: Already a function reference (in-memory sequential task)
+//         return taskReference;
+//     } else if (typeof taskReference === 'string') {
+//         // Case 2: It's a file path string. Use require() to load the exported function.
+//         try {
+//             console.log(`[Resolver] Loading function from file: ${taskReference}`);
+//             // Note: require() caches the result, so subsequent calls are fast.
+//             return require(taskReference);
+//         } catch (error) {
+//             console.error(`Failed to load task from path ${taskReference}: ${error.message}`);
+//             throw error;
+//         }
+//     } else {
+//         throw new Error(`Invalid reference type for task ${taskName}.`);
+//     }
+// }
 
 // Helper function to resolve the function reference (Handles in-memory or file loading)
 function resolveTaskFunction(taskName) {
@@ -171,9 +177,11 @@ function resolveTaskFunction(taskName) {
     }
 }
 
+module.exports.resolveTaskFunction = resolveTaskFunction;
+
 // async function runThreadTaskFlow(taskFlow, sequentialTasks, parallelTaskPaths) {
 //     const resultsMap = new Map();
-    
+
 //     for (const step of taskFlow) {
 //         if (Array.isArray(step)) {
 //             // --- PARALLEL EXECUTION (Worker Threads via File Path) ---
@@ -186,15 +194,15 @@ function resolveTaskFunction(taskName) {
 //             });
 
 //             const workerResults = await Promise.all(workerPromises);
-            
+
 //             workerResults.forEach(({ taskName, result }) => {
 //                 resultsMap.set(taskName, result);
 //             });
-            
+
 //         } else if (typeof step === 'string') {
 //             // --- SEQUENTIAL EXECUTION (Now handles path loading) ---
 //             const taskName = step;
-            
+
 //             // Resolve the function (either in-memory or loaded from path)
 //             const taskFunction = resolveTaskFunction(taskName);
 
@@ -212,7 +220,7 @@ function resolveTaskFunction(taskName) {
 
 async function runThreadTaskFlow(taskFlow, sequentialTasks, parallelTaskPaths) {
     const resultsMap = new Map();
-    
+
     for (const step of taskFlow) {
         if (Array.isArray(step)) {
             // --- PARALLEL EXECUTION (WORKER THREADS via File Path) ---
@@ -225,12 +233,12 @@ async function runThreadTaskFlow(taskFlow, sequentialTasks, parallelTaskPaths) {
             });
 
             const workerResults = await Promise.all(workerPromises);
-            
+
             workerResults.forEach(({ taskName, result }) => {
                 resultsMap.set(taskName, result);
                 console.log(`[Main Thread] Collected result for ${taskName}`);
             });
-            
+
         } else if (typeof step === 'string') {
             // --- SEQUENTIAL EXECUTION (Main Thread) ---
             const taskName = step;
@@ -251,6 +259,94 @@ async function runThreadTaskFlow(taskFlow, sequentialTasks, parallelTaskPaths) {
 module.exports.runThreadTaskFlow = runThreadTaskFlow;
 
 
+// Re-using the utility functions runTaskInProcessWorker, runParallel, and runSeries
+// (Since the logic for passing context and handling strings/arrays is already correct)
+/**
+ * Creates and manages a child process to run a specific task file.
+ * @param {string} functionPath - Path to the task file to run (relative to main.js).
+ * @param {Object} resultsContext - The accumulated results context.
+ * @returns {Promise<*>} - Resolves with the result from the worker.
+ */
+function runTaskInProcessWorker(functionPath, resultsContext) {
+    return new Promise((resolve, reject) => {
+        const taskId = ++taskIdCounter;
+        
+        // **********************************************
+        // ******* UPDATED PATH HERE ********************
+        // **********************************************
+        const worker = fork(path.join(__dirname, 'process.worker.js')); 
+
+        worker.on('message', (message) => {
+            if (message.taskId === taskId) {
+                if (message.status === 'success') {
+                    resolve(message.result);
+                } else {
+                    reject(new Error(`Worker failed to execute ${functionPath}: ${message.error}`));
+                }
+                worker.kill();
+            }
+        });
+
+        worker.on('error', (err) => {
+            reject(new Error(`Child process failed: ${err.message}`));
+        });
+
+        // Send the instruction message.
+        worker.send({ taskId, functionPath, args: resultsContext });
+    });
+}
+
+// --- Main Execution ---
+// runParallel and runSeries functions remain identical as their logic
+// only deals with the workflow array and runTaskInWorker.
+
+async function runParallelInProcess(taskPaths, resultsContext) {
+    console.log(`\n-- Orchestrator: Starting ${taskPaths.length} tasks in PARALLEL...`);
+    
+    const promises = taskPaths.map(filePath => runTaskInProcessWorker(filePath, resultsContext));
+    const parallelResultsArray = await Promise.all(promises);
+    
+    const parallelResultObject = {};
+    taskPaths.forEach((filePath, index) => {
+        parallelResultObject[filePath] = parallelResultsArray[index];
+    });
+
+    return parallelResultObject;
+}
+
+async function runSeriesInProcess(workflow, initialContext) {
+    const resultsContext = { ...initialContext };
+    
+    for (let i = 0; i < workflow.length; i++) {
+        const step = workflow[i];
+        let stepResult;
+        let stepKey;
+
+        if (typeof step === 'string') {
+            stepKey = step;
+            console.log(`\n-- Orchestrator: Starting SERIES step: ${stepKey}`);
+            stepResult = await runTaskInProcessWorker(stepKey, resultsContext);
+            console.log(`-- Orchestrator: Finished SERIES step: ${stepKey}. Result: ${stepResult}`);
+
+        } else if (Array.isArray(step)) {
+            stepKey = `parallel_block_${i}`;
+            console.log(`\n-- Orchestrator: Starting PARALLEL block with ${step.length} tasks (Key: ${stepKey}).`);
+            stepResult = await runParallelInProcess(step, resultsContext);
+            console.log('-- Orchestrator: Finished PARALLEL block.');
+            
+        } else {
+            throw new Error(`Invalid workflow step at index ${i}`);
+        }
+        
+        resultsContext[stepKey] = stepResult;
+    }
+    return resultsContext;
+}
 
 
+module.exports.runTaskInProcessWorker = runTaskInProcessWorker
+
+module.exports.runParallelInProcess = runParallelInProcess
+
+module.exports.runSeriesInProcess = runSeriesInProcess
 

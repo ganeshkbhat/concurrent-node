@@ -1,5 +1,5 @@
 
-const { runPromiseTaskFlow } = require("../../concurrent-node-/index")
+const { runPromiseTaskFlow } = require("../../concurrent-node/index")
 
 // Map to hold all task functions
 var tasks = {};

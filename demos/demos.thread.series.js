@@ -1,4 +1,4 @@
-const { runThreadTaskFlow, runInThreadWorker } = require("../../concurrent-node-/index")
+const { runThreadTaskFlow, runInThreadWorker } = require("../../concurrent-node/index")
 
 const path = require('path'); // Node.js built-in module for path manipulation
 
