@@ -296,7 +296,7 @@ function runTaskInProcessWorker(functionPath, resultsContext) {
     });
 }
 
-function runTaskInWorker(functionPath, resultsContext) {
+function runTaskInProcessWorker(functionPath, resultsContext) {
     return new Promise((resolve) => { // NOTE: Removed 'reject' from arguments
         const taskId = ++taskIdCounter;
         const worker = fork(path.join(__dirname, 'process.worker.js')); 

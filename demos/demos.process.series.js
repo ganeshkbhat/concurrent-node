@@ -1,3 +1,6 @@
+
+const {runTaskInProcessWorker, runParallelInProcess, runSeriesInProcess } = require("../index.js")
+
 async function main() {
     console.log('==================================================');
     console.log('🚀 Starting Workflow (All results tracked)');
@@ -16,7 +19,7 @@ async function main() {
     };
 
     try {
-        const finalContext = await runSeries(workflow, initialContext);
+        const finalContext = await runSeriesInProcess(workflow, initialContext);
         
         console.log('\n==================================================');
         console.log('✅ Workflow Complete - FINAL RESULTS CONTEXT');
