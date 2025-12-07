@@ -68,7 +68,7 @@ module.exports.runPromiseTaskFlow = runPromiseTaskFlow;
 // // 
 // function runInThreadWorker(taskName, taskFilePath, resultsMap) {
 //     return new Promise((resolve, reject) => {
-//         const worker = new Worker('./worker.js');
+//         const worker = new Worker('./thread.worker.js');
 
 //         // Convert Map data for transmission
 //         const resultsArray = Array.from(resultsMap.entries());
@@ -111,7 +111,7 @@ module.exports.runPromiseTaskFlow = runPromiseTaskFlow;
 // Worker thread setup (with termination fix)
 function runInThreadWorker(taskName, taskFilePath, resultsMap) {
     return new Promise((resolve, reject) => {
-        const worker = new Worker('./worker.js');
+        const worker = new Worker('./thread.worker.js');
         const resultsArray = Array.from(resultsMap.entries());
 
         worker.postMessage({ taskName, taskFilePath, resultsMap: resultsArray });
