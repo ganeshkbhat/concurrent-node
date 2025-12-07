@@ -296,6 +296,43 @@ function runTaskInProcessWorker(functionPath, resultsContext) {
     });
 }
 
+function runTaskInWorker(functionPath, resultsContext) {
+    return new Promise((resolve) => { // NOTE: Removed 'reject' from arguments
+        const taskId = ++taskIdCounter;
+        const worker = fork(path.join(__dirname, 'process.worker.js')); 
+
+        worker.on('message', (message) => {
+            if (message.taskId === taskId) {
+                if (message.status === 'success') {
+                    resolve(message.result);
+                } else {
+                    // *** GRACEFUL FAILURE HANDLING ***
+                    // Instead of rejecting, we resolve with a structured Error Object
+                    resolve({ 
+                        __error__: true, // Use a unique key to identify errors
+                        message: `Task failed: ${message.error}`,
+                        path: functionPath,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+                worker.kill();
+            }
+        });
+
+        worker.on('error', (err) => {
+            // Handle process crash by resolving with an error object
+            resolve({
+                __error__: true,
+                message: `Child process failed: ${err.message}`,
+                path: functionPath,
+                timestamp: new Date().toISOString()
+            });
+        });
+
+        worker.send({ taskId, functionPath, args: resultsContext });
+    });
+}
+
 // --- Main Execution ---
 // runParallel and runSeries functions remain identical as their logic
 // only deals with the workflow array and runTaskInWorker.
