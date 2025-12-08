@@ -8,7 +8,7 @@ async function main() {
 
     const workflow = [
         'demos/task.process.one.js',                     
-        ['demos/task.process.one.js', 'demos/task.parallel.two.js'],
+        ['demos/task.process.four.js', 'demos/task.process.two.js'],
         'demos/task.process.three.js'
     ];
     
