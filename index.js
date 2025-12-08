@@ -271,9 +271,6 @@ function runTaskInProcessWorker(functionPath, resultsContext) {
     return new Promise((resolve, reject) => {
         const taskId = ++taskIdCounter;
         
-        // **********************************************
-        // ******* UPDATED PATH HERE ********************
-        // **********************************************
         const worker = fork(path.join(__dirname, 'process.worker.js')); 
 
         worker.on('message', (message) => {

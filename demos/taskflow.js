@@ -1,5 +1,6 @@
 
-const { runPromiseTaskFlow } = require("../../concurrent-node/index")
+const { runPromiseTaskFlow, runThreadTaskFlow, runInThreadWorker, runSeriesInProcess, runParallelInProcess } = require("../../concurrent-node/index")
+const path = require('path'); // Node.js built-in module for path manipulation
 
 // Map to hold all task functions
 const tasks = {};
@@ -61,35 +62,56 @@ tasks.testfour = testfour;
 /**
  * Another parallel-friendly task.
  */
-function testfour(resultsMap) {
+function testfive(resultsMap) {
     console.log(`\nStarting testfour. Current map size: ${resultsMap.size}`);
 
-    return "Result D: Parallel Task Two.";
+    return 20;
 }
-tasks.testfour = testfour;
+tasks.testfive = testfive;
 
 
 // --- 3. Define the specification and run ---
 
 const taskSpecification = [
     "testone",      // 1. Sequential: Initializes resultsMap with 'testone' result.
-    ["testthree", "testfour"], // 2. Parallel: Both can access 'testone' result. Adds 'testthree' and 'testfour' results.
-    "testtwo"       // 3. Sequential: Can access 'testone', 'testthree', and 'testfour' results.
+    ["testthree", "testfour", "testfive"], // 2. Parallel: Both can access 'testone' result. Adds 'testthree' and 'testfour' and 'testfive' results.
+    "testtwo"       // 3. Sequential: Can access 'testone', 'testthree', 'testfive' and 'testfour' results.
 ];
 
-(async () => {
-    try {
-        console.log("--- Starting Task Flow Execution ---");
-        const finalResults = await runPromiseTaskFlow(taskSpecification, tasks);
 
-        console.log("\n==============================");
-        console.log("✅ All tasks completed.");
-        console.log("Final Result (Complete Map):");
-        console.log(finalResults);
-        console.log("==============================");
-    } catch (error) {
-        console.error("❌ Task Flow Failed:", error.message);
-    }
-})();
+// Map parallel task names to their FILE PATHS
+const parallelTaskPaths = {
+    testthree: path.resolve(__dirname, '../demos/taskthree.js'),
+    testfour: path.resolve(__dirname, '../demos/taskfour.js'),
+    testfive: path.resolve(__dirname, '../demos/task.process.four.js')
+};
+
+
+// Map parallel task names to their FILE PATHS
+const parallelProcessTaskPaths = [
+    '../demos/taskthree.js',  
+    '../demos/tasktwo.js',  
+    ["../demos/taskthree.js", './demos/taskfour.js', './demos/task.process.one.js'], 
+    '../demos/taskone.js'
+]
+
+
+
+var finalResults
+
+async function main() {
+    finalResults = await runPromiseTaskFlow(taskSpecification, tasks);
+    console.log("finalResults: async: ", finalResults)
+
+    // finalResults = await runThreadTaskFlow(taskSpecification, tasks, parallelTaskPaths);
+    // console.log("finalResults: threads: ", finalResults)
+
+    // finalResults = await runSeriesInProcess(parallelProcessTaskPaths, {});
+    // console.log("finalResults: process: ", JSON.stringify(finalResults))
+
+}
+
+main()
+
 
 

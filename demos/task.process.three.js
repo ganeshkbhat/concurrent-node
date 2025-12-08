@@ -2,9 +2,10 @@ const path = require("path");
 
 module.exports = async function taskthree(resultsContext) {
     const parallelResults = resultsContext.parallel_block_1; 
-    const resultOne = parallelResults['../demos/task.process.one.js'];
-    // const resultOne = parallelResults[path.join(__dirname, './task.process.one.js')]; // Accessing by file path key
-    const resultTwo = parallelResults['../demos/task.process.two.js']; 
+    const resultOne = parallelResults['demos/task.process.one.js'];
+    console.log(resultOne, parallelResults)
+    // const resultOne = parallelResults[path.join(__dirname, './demos/task.process.one.js')]; // Accessing by file path key
+    const resultTwo = parallelResults['./task.process.two.js']; 
     console.log(resultOne, resultTwo)
     
     console.log(`[Worker - demos/task.process.three.js] Started. Combining: ${resultOne} and ${resultTwo}`);

@@ -67,9 +67,10 @@ tasks = {
 // --- 3. Define the specification and run ---
 
 const taskSpecification = [
-          // 1. Sequential: Initializes resultsMap with 'testone' result.
+    "testtwo",   // 1. Sequential: Initializes resultsMap with 'testone' result.
     ["testthree", "testfour"], // 2. Parallel: Both can access 'testone' result. Adds 'testthree' and 'testfour' results.
-    [ "testone", "testtwo"]       // 3. Sequential: Can access 'testone', 'testthree', and 'testfour' results.
+    ["testone", "testtwo"],
+    "testone",       
 ];
 
 (async () => {
