@@ -41,7 +41,7 @@ const initialContext = {
         initialData: 10,
     };
 
-const finalContext = await runSeriesInProcess(workflow initialContext);
+const finalContext = await runSeriesInProcess(workflow, initialContext);
         
 console.log(finalContext);
 
