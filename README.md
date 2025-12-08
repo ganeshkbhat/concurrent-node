@@ -7,6 +7,7 @@ all demos are in the [demo folder](https://github.com/ganeshkbhat/concurrent-nod
 ```
 var tasks= {}
 
+// resultsMap gives access to results within the function
 function testfour(resultsMap) {
     console.log(`\nStarting testfour. Current map size: ${resultsMap.size}`);
 
@@ -26,11 +27,22 @@ const finalResults = await runPromiseTaskFlow(taskSpecification, tasks);
 
 console.log(finalResults);
 
+
 ```
 
 ##### process based concurrency
 
 ```
+// resultsMap gives access to results within the function
+//
+// demos/task.process.one.js below
+//
+// function testfour(resultsMap) {
+//    console.log(`\nStarting testfour. Current map size: ${resultsMap.size}`);
+//
+//    return "Result D: Parallel Task Two.";
+// }
+//
 const workflow = [
         'demos/task.process.one.js',                     
         ['demos/task.process.two.js', 'demos/task.process.three.js'], // Parallel block
@@ -50,6 +62,9 @@ console.log(finalContext);
 ##### thread based concurrency
 
 ```
+
+// resultsMap gives access to results within the function
+
 const sequentialTasks = {
     testone: (resultsMap) => {
         console.log(`\n--- STEP: Starting Sequential task: testone ---`);
