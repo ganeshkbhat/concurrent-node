@@ -1,4 +1,4 @@
-# concurrentjs
+# concurrent-node
 run functions concurrently in workers and thread pool
 
 all demos are in the [demo folder](https://github.com/ganeshkbhat/concurrent-node/tree/main/demos)
