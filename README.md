@@ -5,9 +5,16 @@ all demos are in the [demo folder](https://github.com/ganeshkbhat/concurrent-nod
 
 ##### promise based concurrency
 ```
-var tasks= {}
+var tasks = {}
 
 // resultsMap gives access to results within the function
+function testfour(resultsMap) {
+    console.log(`\nStarting testfour. Current map size: ${resultsMap.size}`);
+
+    return "Result D: Parallel Task Two.";
+}
+tasks.testthree = testthree;
+
 function testfour(resultsMap) {
     console.log(`\nStarting testfour. Current map size: ${resultsMap.size}`);
 
@@ -30,42 +37,13 @@ console.log(finalResults);
 
 ```
 
-##### process based concurrency
-
-```
-// resultsMap gives access to results within the function
-//
-// demos/task.process.one.js below
-//
-// function testfour(resultsMap) {
-//    console.log(`\nStarting testfour. Current map size: ${resultsMap.size}`);
-//
-//    return "Result D: Parallel Task Two.";
-// }
-//
-const workflow = [
-        'demos/task.process.one.js',                     
-        ['demos/task.process.two.js', 'demos/task.process.three.js'], // Parallel block
-        'demos/task.process.four.js'
-    ];
-
-const initialContext = {
-        initialData: 10,
-    };
-
-const finalContext = await runSeriesInProcess(workflow, initialContext);
-        
-console.log(finalContext);
-
-```
-
 ##### thread based concurrency
 
 ```
 
 // resultsMap gives access to results within the function
 
-const sequentialTasks = {
+const tasks = {
     testone: (resultsMap) => {
         console.log(`\n--- STEP: Starting Sequential task: testone ---`);
         return "Result A: First task complete.";
@@ -91,8 +69,37 @@ const taskSpecification = [
     "testtwo"
 ];
 
-const finalResults = await runThreadTaskFlow(taskSpecification, sequentialTasks, parallelTaskPaths);
+const finalResults = await runThreadTaskFlow(taskSpecification, tasks, parallelTaskPaths);
 
 console.log(finalResults);
+
+```
+
+##### process based concurrency
+
+```
+// resultsMap gives access to results within the function
+//
+// demos/task.process.one.js below
+//
+// function testfour(resultsMap) {
+//    console.log(`\nStarting testfour. Current map size: ${resultsMap.size}`);
+//
+//    return "Result D: Parallel Task Two.";
+// }
+//
+const tasks = [
+        'demos/task.process.one.js',                     
+        ['demos/task.process.two.js', 'demos/task.process.three.js'], // Parallel block
+        'demos/task.process.four.js'
+    ];
+
+const initialContext = {
+        initialData: 10,
+    };
+
+const finalContext = await runSeriesInProcess(tasks, initialContext);
+        
+console.log(finalContext);
 
 ```
