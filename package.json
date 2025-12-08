@@ -1,6 +1,6 @@
 {
   "name": "concurrent-node",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "run functions concurrently in workers and thread pool",
   "main": "index.js",
   "directories": {
