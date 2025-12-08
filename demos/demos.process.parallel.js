@@ -3,11 +3,11 @@ const {runTaskInProcessWorker, runParallelInProcess, runSeriesInProcess } = requ
 
 async function main() {
     console.log('==================================================');
-    console.log('🚀 Starting File Path Loaded Workflow');
+    console.log('🚀 Starting File Path Loaded taskSpecification');
     console.log('==================================================');
 
-    // The workflow now uses file paths (relative to main.js)
-    const workflow = [
+    // The taskSpecification now uses file paths (relative to main.js)
+    const taskSpecification = [
         'demos/task.process.one.js',                     
         ['demos/task.process.two.js', 'demos/task.process.three.js'], // Parallel block
         'demos/task.process.four.js'
@@ -18,7 +18,7 @@ async function main() {
     };
 
     try {
-        const finalContext = await runSeriesInProcess(workflow, initialContext);
+        const finalContext = await runSeriesInProcess(taskSpecification, initialContext);
         
         console.log('\n==================================================');
         console.log('✅ Workflow Complete');

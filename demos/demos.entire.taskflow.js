@@ -1,9 +1,9 @@
 
-const { runPromiseTaskFlow, runThreadTaskFlow, runInThreadWorker, runSeriesInProcess, runParallelInProcess } = require("../../concurrent-node/index")
+const { runPromiseTaskFlow, runThreadTaskFlow, runInThreadWorker, runSeriesInProcess, runParallelInProcess } = require("../index")
 const path = require('path'); // Node.js built-in module for path manipulation
 
 // Map to hold all task functions
-const tasks = {};
+var tasks = {};
 
 /**
  * Task signature: (resultsMap) => result
@@ -44,7 +44,7 @@ function testthree(resultsMap) {
     console.log(`\nStarting testthree. Current map size: ${resultsMap.size}`);
 
     // This task runs in parallel with another, both accessing the same current map
-    return "Result C: Parallel Task One.";
+    return "Result C: testthree";
 }
 tasks.testthree = testthree;
 
@@ -54,7 +54,7 @@ tasks.testthree = testthree;
 function testfour(resultsMap) {
     console.log(`\nStarting testfour. Current map size: ${resultsMap.size}`);
 
-    return "Result D: Parallel Task Two.";
+    return "Result D: testfour";
 }
 tasks.testfour = testfour;
 
@@ -81,32 +81,34 @@ const taskSpecification = [
 
 // Map parallel task names to their FILE PATHS
 const parallelTaskPaths = {
-    testthree: path.resolve(__dirname, '../demos/taskthree.js'),
-    testfour: path.resolve(__dirname, '../demos/taskfour.js'),
-    testfive: path.resolve(__dirname, '../demos/task.process.four.js')
+    testthree: path.resolve(__dirname, './demos/taskthree.js'),
+    testfour: path.resolve(__dirname, './demos/taskfour.js'),
+    testfive: path.resolve(__dirname, './demos/task.process.four.js')
 };
 
 
 // Map parallel task names to their FILE PATHS
 const parallelProcessTaskPaths = [
-    '../demos/taskthree.js',  
-    '../demos/tasktwo.js',  
-    ["../demos/taskthree.js", './demos/taskfour.js', './demos/task.process.one.js'], 
-    '../demos/taskone.js'
+    './demos/taskone.js',  
+    ["./demos/task.process.three.js", './demos/taskfour.js', './demos/task.process.four.js'], 
+    './demos/tasktwo.js'
 ]
-
 
 
 var finalResults
 
 async function main() {
+
+    // same test in promise mode
     finalResults = await runPromiseTaskFlow(taskSpecification, tasks);
     console.log("finalResults: async: ", finalResults)
 
-    // finalResults = await runThreadTaskFlow(taskSpecification, tasks, parallelTaskPaths);
-    // console.log("finalResults: threads: ", finalResults)
+    // same function test in thread mode >> error in path definition for file - rectify this
+    finalResults = await runThreadTaskFlow(taskSpecification, tasks, parallelTaskPaths);
+    console.log("finalResults: threads: ", finalResults)
 
-    // finalResults = await runSeriesInProcess(parallelProcessTaskPaths, {});
+    // same functions test in process mode >> error in path definition for file - rectify this
+    // finalResults = await runSeriesInProcess(parallelProcessTaskPaths, parallelTaskPaths);
     // console.log("finalResults: process: ", JSON.stringify(finalResults))
 
 }

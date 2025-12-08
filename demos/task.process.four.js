@@ -1,5 +1,5 @@
 module.exports = async function taskfour(resultsContext) {
-    const input = resultsContext.initialData;
+    const input = resultsContext.initialData ? resultsContext.initialData : 30;
     console.log(`[Worker - demos/task.process.four.js] Started with initialData: ${input}`);
     await new Promise(resolve => setTimeout(resolve, 200));
     const result = input + 50;
